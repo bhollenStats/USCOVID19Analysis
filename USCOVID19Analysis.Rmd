@@ -1,0 +1,55 @@
+---
+title: "USCOVID19Analysis"
+author: "hollen"
+date: "3/27/2020"
+output: html_document
+params:
+  debug: 1
+  usStateData: 'data/us-states.csv'
+  usCountyData: 'data/us-counties.csv'
+  dataSource: 'Data provided by the N.Y. Times [https://github.com/nytimes/covid-19-data]'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## U.S. COVID-19 Analysis from Aggregated New York Times Data
+
+This is just a sandbox for me to evaluate the COVID-19 data that has been aggregated by the New York Times, which is available at the following GitHub location  <https://github.com/nytimes/covid-19-data>.
+
+Per the license agreement for the data I would like to provide the link to the U.S. tracking page for the New York Times as <https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html>
+
+
+```{r Initialize, echo=FALSE, warning=FALSE, error=FALSE}
+library(tidyverse)
+library(ggplot2)
+```
+
+
+```{r InputDataAndCleanUp, echo=FALSE, warning=FALSE, error=FALSE}
+dfStateData <- read.csv(file=params$usStateData)
+dfStateData <- dfStateData %>%
+  mutate(Date=date, State=state, FIPS=fips, Cases=cases, Deaths=deaths) %>%
+  mutate(Day=as.integer(date)) %>%
+  select(-date, -state, -fips, -cases, -deaths)
+if(params$debug==1) head(dfStateData)
+```
+
+```{r dfDailyStateCases, echo=FALSE, warning=FALSE, error=FALSE}
+dfDailyStateCases <- dfStateData %>%
+  group_by(Day) %>%
+  summarise(DailyStateCases=sum(Cases, na.rm=TRUE))
+if(params$debug==1) head(dfDailyStateCases)
+```
+
+```{r dfDailyCasesGraphic, echo=FALSE, warning=FALSE, error=FALSE}
+dfDailyStateCases %>%
+  ggplot(mapping=aes(Day, DailyStateCases)) +
+  geom_line(colour = 'cyan') +
+  coord_cartesian() + 
+  theme_dark() + 
+  labs(y='Daily Cases', x='Day', title='Daily U.S. Cases', subtitle=params$dataSource)
+```
+
+
