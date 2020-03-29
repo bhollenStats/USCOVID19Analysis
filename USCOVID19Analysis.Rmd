@@ -4,7 +4,7 @@ author: "hollen"
 date: "3/27/2020"
 output: html_document
 params:
-  debug: 1
+  debug: 0
   usStateData: 'data/us-states.csv'
   usCountyData: 'data/us-counties.csv'
   dataSource: 'Data provided by the N.Y. Times [https://github.com/nytimes/covid-19-data]'
@@ -24,6 +24,7 @@ Per the license agreement for the data I would like to provide the link to the U
 ```{r Initialize, echo=FALSE, warning=FALSE, error=FALSE}
 library(tidyverse)
 library(ggplot2)
+library(knitr)
 ```
 
 
@@ -36,11 +37,27 @@ dfStateData <- dfStateData %>%
 if(params$debug==1) head(dfStateData)
 ```
 
+```{r dfDailyCountyCases, echo=FALSE, warning=FALSE, error=FALSE}
+dfCountyData <- read.csv(file=params$usCountyData)
+dfCountyData <- dfCountyData %>%
+  mutate(Date=date, County=county, State=state, FIPS=fips, Cases=cases, Deaths=deaths) %>%
+  mutate(Day=as.integer(date)) %>%
+  select(-date, -county, -state, -fips, -cases, -deaths)
+if(params$debug==1) head(dfCountyData)
+```
+
 ```{r dfDailyStateCases, echo=FALSE, warning=FALSE, error=FALSE}
 dfDailyStateCases <- dfStateData %>%
   group_by(Day) %>%
   summarise(DailyStateCases=sum(Cases, na.rm=TRUE))
 if(params$debug==1) head(dfDailyStateCases)
+```
+```{r dfDailyMichiganCases, echo=FALSE, warning=FALSE, error=FALSE}
+dfDailyMichiganCases <- dfStateData %>%
+  filter(State == 'Michigan') %>%
+  group_by(Day) %>%
+  summarize(DailyMichiganCases=sum(Cases, na.rm=TRUE))
+if(params$debug==1) head(dfDailyMichiganCases)
 ```
 
 ```{r dfDailyCasesGraphic, echo=FALSE, warning=FALSE, error=FALSE}
@@ -51,5 +68,23 @@ dfDailyStateCases %>%
   theme_dark() + 
   labs(y='Daily Cases', x='Day', title='Daily U.S. Cases', subtitle=params$dataSource)
 ```
+```{r dfDailyMichiganCasesGraphic, echo=FALSE, warning=FALSE, error=FALSE}
+dfDailyMichiganCases %>%
+  ggplot(mapping=aes(Day, DailyMichiganCases)) +
+  geom_line(colour = 'lightgreen') +
+  coord_cartesian() + 
+  theme_dark() + 
+  labs(y='Daily Cases', x='Day', title='Daily Michigan Cases', subtitle=params$dataSource)
+```
 
+```{r dfDailyLocalCountiesCases, echo=FALSE, warning=FALSE, error=FALSE}
+dfDailyLocalCountiesCases <- dfCountyData %>% 
+  filter(State == 'Michigan') %>% 
+  group_by(County) %>% 
+  summarize(CasesPerCounty=sum(Cases, na.rm=TRUE), DeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
+  arrange(desc(CasesPerCounty)) %>%
+  top_n(20)
+if(params$debug==1) head(dfDailyLocalCountiesCases)
+kable(dfDailyLocalCountiesCases)
+```
 
