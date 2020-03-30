@@ -52,6 +52,7 @@ dfDailyStateCases <- dfStateData %>%
   summarise(DailyStateCases=sum(Cases, na.rm=TRUE))
 if(params$debug==1) head(dfDailyStateCases)
 ```
+
 ```{r dfDailyMichiganCases, echo=FALSE, warning=FALSE, error=FALSE}
 dfDailyMichiganCases <- dfStateData %>%
   filter(State == 'Michigan') %>%
@@ -83,8 +84,40 @@ dfDailyLocalCountiesCases <- dfCountyData %>%
   group_by(County) %>% 
   summarize(CasesPerCounty=sum(Cases, na.rm=TRUE), DeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
   arrange(desc(CasesPerCounty)) %>%
-  top_n(20)
+  top_n(15)
 if(params$debug==1) head(dfDailyLocalCountiesCases)
 kable(dfDailyLocalCountiesCases)
+```
+
+```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE}
+dfMichiganChange <- dfCountyData %>% 
+  filter(Date == as.character(Sys.Date()-1)) %>% 
+  filter(State=='Michigan') %>% 
+  group_by(County) %>% 
+  summarize(CurrentCasesPerCounty=sum(Cases, na.rm=TRUE), CurrentDeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
+  arrange(County)
+if(params$debug==1) head(dfMichiganChange)
+
+dfPreviousDayReportData <- dfCountyData %>% 
+  filter(Date == as.character(Sys.Date()-2)) %>% 
+  filter(State=='Michigan') %>% 
+  group_by(County) %>% 
+  summarize(PreviousCasesPerCounty=sum(Cases, na.rm=TRUE), PreviousDeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
+  arrange(County)
+if(params$debug==1) head(dfPreviousDayReportData)
+
+dfMichiganDelta <- dfMichiganChange %>% full_join(dfPreviousDayReportData, by='County')
+
+dfMichiganDelta <- dfMichiganDelta %>%
+  mutate(CasesPctChange=round((CurrentCasesPerCounty-PreviousCasesPerCounty)/CurrentCasesPerCounty*100, digits = 0)) %>%
+  mutate(DeathsPctChange=round((CurrentDeathsPerCounty-PreviousDeathsPerCounty)/CurrentDeathsPerCounty*100, digits = 0)) %>% 
+  mutate_at(vars(CasesPctChange, DeathsPctChange), ~replace(., is.nan(.), '-')) %>%
+  mutate_at(vars(CasesPctChange, DeathsPctChange), ~replace(., is.infinite(.), '-')) %>%
+  arrange(desc(CurrentCasesPerCounty)) %>%
+  top_n(15)
+  
+kable(dfMichiganDelta, 
+      col.names=c('County', 'CasesToday', 'DeathsToday', 'CasesYesterday', 'DeathsPrevious', 'CasesChg[%]', 'DeathsChg[%]'),
+      align=c('lcccccc'))
 ```
 
