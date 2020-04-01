@@ -2,12 +2,15 @@
 title: "USCOVID19Analysis"
 author: "hollen"
 date: "3/27/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 params:
+  dataSource: Data provided by the N.Y. Times [https://github.com/nytimes/covid-19-data]
   debug: 0
-  usStateData: 'data/us-states.csv'
-  usCountyData: 'data/us-counties.csv'
-  dataSource: 'Data provided by the N.Y. Times [https://github.com/nytimes/covid-19-data]'
+  usCountyData: data/us-counties.csv
+  usStateData: data/us-states.csv
 ---
 
 ```{r setup, include=FALSE}
@@ -21,14 +24,14 @@ This is just a sandbox for me to evaluate the COVID-19 data that has been aggreg
 Per the license agreement for the data I would like to provide the link to the U.S. tracking page for the New York Times as <https://www.nytimes.com/interactive/2020/us/coronavirus-us-cases.html>
 
 
-```{r Initialize, echo=FALSE, warning=FALSE, error=FALSE}
+```{r Initialize, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 library(tidyverse)
 library(ggplot2)
 library(knitr)
 ```
 
 
-```{r InputDataAndCleanUp, echo=FALSE, warning=FALSE, error=FALSE}
+```{r InputDataAndCleanUp, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfStateData <- read.csv(file=params$usStateData)
 dfStateData <- dfStateData %>%
   mutate(Date=date, State=state, FIPS=fips, Cases=cases, Deaths=deaths) %>%
@@ -37,7 +40,7 @@ dfStateData <- dfStateData %>%
 if(params$debug==1) head(dfStateData)
 ```
 
-```{r dfDailyCountyCases, echo=FALSE, warning=FALSE, error=FALSE}
+```{r dfDailyCountyCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfCountyData <- read.csv(file=params$usCountyData)
 dfCountyData <- dfCountyData %>%
   mutate(Date=date, County=county, State=state, FIPS=fips, Cases=cases, Deaths=deaths) %>%
@@ -46,14 +49,14 @@ dfCountyData <- dfCountyData %>%
 if(params$debug==1) head(dfCountyData)
 ```
 
-```{r dfDailyStateCases, echo=FALSE, warning=FALSE, error=FALSE}
+```{r dfDailyStateCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfDailyStateCases <- dfStateData %>%
   group_by(Day) %>%
   summarise(DailyStateCases=sum(Cases, na.rm=TRUE))
 if(params$debug==1) head(dfDailyStateCases)
 ```
 
-```{r dfDailyMichiganCases, echo=FALSE, warning=FALSE, error=FALSE}
+```{r dfDailyMichiganCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfDailyMichiganCases <- dfStateData %>%
   filter(State == 'Michigan') %>%
   group_by(Day) %>%
@@ -78,7 +81,7 @@ dfDailyMichiganCases %>%
   labs(y='Daily Cases', x='Day', title='Daily Michigan Cases', subtitle=params$dataSource)
 ```
 
-```{r dfDailyLocalCountiesCases, echo=FALSE, warning=FALSE, error=FALSE}
+```{r dfDailyLocalCountiesCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfDailyLocalCountiesCases <- dfCountyData %>% 
   filter(State == 'Michigan') %>% 
   group_by(County) %>% 
@@ -86,10 +89,16 @@ dfDailyLocalCountiesCases <- dfCountyData %>%
   arrange(desc(CasesPerCounty)) %>%
   top_n(15)
 if(params$debug==1) head(dfDailyLocalCountiesCases)
-kable(dfDailyLocalCountiesCases)
 ```
 
-```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE}
+### Top 15 Cases Per County
+
+```{r dpc, echo=FALSE, warning=FALSE, error=FALSE}
+kable(dfDailyLocalCountiesCases)
+
+```
+
+```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfMichiganChange <- dfCountyData %>% 
   filter(Date == as.character(Sys.Date()-1)) %>% 
   filter(State=='Michigan') %>% 
@@ -116,8 +125,14 @@ dfMichiganDelta <- dfMichiganDelta %>%
   arrange(desc(CurrentCasesPerCounty)) %>%
   top_n(15)
   
+```
+
+### Top 15 Cases Per County with 24 Hour Changes
+
+```{r cpd, echo=FALSE, warning=FALSE, error=FALSE}
 kable(dfMichiganDelta, 
-      col.names=c('County', 'CasesToday', 'DeathsToday', 'CasesYesterday', 'DeathsPrevious', 'CasesChg[%]', 'DeathsChg[%]'),
+      col.names=c('County', 'CasesToday', 'DeathsToday', 'CasesYesterday', 'DeathsYesterday', 'CasesChg[%]', 'DeathsChg[%]'),
       align=c('lcccccc'))
+
 ```
 
