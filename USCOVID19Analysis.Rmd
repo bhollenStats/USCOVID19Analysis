@@ -72,6 +72,21 @@ dfDailyStateCases %>%
   theme_dark() + 
   labs(y='Daily Cases', x='Day', title='Daily U.S. Cases', subtitle=params$dataSource)
 ```
+```{r dfDailyNationalCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+dfDailyNationalCases <- dfStateData %>% 
+  group_by(State) %>% 
+  summarize(CasesPerState=sum(Cases, na.rm=TRUE), DeathsPerState=sum(Deaths, na.rm=TRUE)) %>% 
+  arrange(desc(CasesPerState))
+if(params$debug==1) head(dfDailyNationalCases)
+```
+
+### Cases in the United States
+
+```{r dfDNC, echo=FALSE, warning=FALSE, error=FALSE}
+kable(dfDailyNationalCases)
+```
+
+
 ```{r dfDailyMichiganCasesGraphic, echo=FALSE, warning=FALSE, error=FALSE}
 dfDailyMichiganCases %>%
   ggplot(mapping=aes(Day, DailyMichiganCases)) +
@@ -95,7 +110,6 @@ if(params$debug==1) head(dfDailyLocalCountiesCases)
 
 ```{r dpc, echo=FALSE, warning=FALSE, error=FALSE}
 kable(dfDailyLocalCountiesCases)
-
 ```
 
 ```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
