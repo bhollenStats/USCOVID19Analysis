@@ -75,7 +75,7 @@ dfDailyStateCases %>%
 ```{r dfDailyNationalCases, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfDailyNationalCases <- dfStateData %>% 
   group_by(State) %>% 
-  summarize(CasesPerState=sum(Cases, na.rm=TRUE), DeathsPerState=sum(Deaths, na.rm=TRUE)) %>% 
+  summarize(CasesPerState=sum(Cases, na.rm=TRUE), DeathsPerState=sum(Deaths, na.rm=TRUE), FatalityPct=round(DeathsPerState/CasesPerState*100,digits=2)) %>%
   arrange(desc(CasesPerState))
 if(params$debug==1) head(dfDailyNationalCases)
 ```
@@ -83,7 +83,9 @@ if(params$debug==1) head(dfDailyNationalCases)
 ### Cases in the United States
 
 ```{r dfDNC, echo=FALSE, warning=FALSE, error=FALSE}
-kable(dfDailyNationalCases)
+kable(dfDailyNationalCases, 
+      col.names=c('State', 'Cases', 'Deaths', "%Fatal"),
+      align=c('lrrr'))
 ```
 
 
@@ -100,16 +102,18 @@ dfDailyMichiganCases %>%
 dfDailyLocalCountiesCases <- dfCountyData %>% 
   filter(State == 'Michigan') %>% 
   group_by(County) %>% 
-  summarize(CasesPerCounty=sum(Cases, na.rm=TRUE), DeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
+  summarize(CasesPerCounty=sum(Cases, na.rm=TRUE), DeathsPerCounty=sum(Deaths, na.rm=TRUE), PctPerCounty=sum(round(DeathsPerCounty/CasesPerCounty*100,digits=2), na.rm=TRUE)) %>%
   arrange(desc(CasesPerCounty)) %>%
-  top_n(15)
+  top_n(15, wt=CasesPerCounty)
 if(params$debug==1) head(dfDailyLocalCountiesCases)
 ```
 
 ### Top 15 Cases Per County
 
 ```{r dpc, echo=FALSE, warning=FALSE, error=FALSE}
-kable(dfDailyLocalCountiesCases)
+kable(dfDailyLocalCountiesCases,
+      col.names = c('County', 'Cases', 'Deaths', '%Fatal'),
+      align = c('lrrr'))
 ```
 
 ```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
@@ -137,7 +141,7 @@ dfMichiganDelta <- dfMichiganDelta %>%
   mutate_at(vars(CasesPctChange, DeathsPctChange), ~replace(., is.nan(.), '-')) %>%
   mutate_at(vars(CasesPctChange, DeathsPctChange), ~replace(., is.infinite(.), '-')) %>%
   arrange(desc(CurrentCasesPerCounty)) %>%
-  top_n(15)
+  top_n(15, wt=CurrentCasesPerCounty)
   
 ```
 
@@ -145,7 +149,7 @@ dfMichiganDelta <- dfMichiganDelta %>%
 
 ```{r cpd, echo=FALSE, warning=FALSE, error=FALSE}
 kable(dfMichiganDelta, 
-      col.names=c('County', 'CasesToday', 'DeathsToday', 'CasesYesterday', 'DeathsYesterday', 'CasesChg[%]', 'DeathsChg[%]'),
+      col.names=c('County', 'CasesToday', 'DeathsToday', 'CasesYesterday', 'DeathsYesterday', '%CasesChg', '%DeathsChg'),
       align=c('lcccccc'))
 
 ```
