@@ -8,7 +8,7 @@ output:
     df_print: paged
 params:
   dataSource: Data provided by the N.Y. Times [https://github.com/nytimes/covid-19-data]
-  debug: 0
+  debug: 1
   usCountyData: data/us-counties.csv
   usStateData: data/us-states.csv
 ---
@@ -28,15 +28,40 @@ Per the license agreement for the data I would like to provide the link to the U
 library(tidyverse)
 library(ggplot2)
 library(knitr)
+library(rvest)
 ```
 
+```{r dfMiCountyPopulation, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+uri <- "https://worldpopulationreview.com/us-counties/mi/"
+siteContent <- read_html(uri)
+tables <- html_table(siteContent)
+dfMiCountyPopulation <- as_tibble(tables[[1]])
+dfMiCountyPopulation <- dfMiCountyPopulation %>% 
+  mutate(County=str_replace_all(Name, ' County', '')) %>% 
+  mutate(Population=parse_number(`2020 Population`)) %>% 
+  select(County, Population)
+if(params$debug==1) head(dfMiCountyPopulation)
+```
+
+```{r dfStatePopulation, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
+uri <- "https://worldpopulationreview.com/states/"
+siteContent <- read_html(uri)
+tables <- html_table(siteContent)
+dfStatePopulation <- as_tibble(tables[[1]])
+dfStatePopulation <- dfStatePopulation %>% 
+  mutate(Population=parse_number(`2020 Pop.`)) %>% 
+  select(State, Population)
+if(params$debug==1) head(dfStatePopulation)
+
+```
 
 ```{r InputDataAndCleanUp, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfStateData <- read.csv(file=params$usStateData)
 dfStateData <- dfStateData %>%
   mutate(Date=date, State=state, FIPS=fips, Cases=cases, Deaths=deaths) %>%
   mutate(Day=as.integer(date)) %>%
-  select(-date, -state, -fips, -cases, -deaths)
+  select(-date, -state, -fips, -cases, -deaths) %>%
+  inner_join(dfStatePopulation)
 if(params$debug==1) head(dfStateData)
 ```
 
