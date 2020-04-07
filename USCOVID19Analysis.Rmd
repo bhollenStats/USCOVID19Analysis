@@ -145,7 +145,7 @@ kable(dfDailyLocalCountiesCases,
 
 ```{r df24HourChange, echo=FALSE, warning=FALSE, error=FALSE, include=FALSE}
 dfMichiganChange <- dfCountyData %>% 
-  filter(Date == as.character(Sys.Date()-2)) %>% 
+  filter(Date == as.character(Sys.Date()-1)) %>% 
   filter(State=='Michigan') %>% 
   group_by(County) %>% 
   summarize(CurrentCasesPerCounty=sum(Cases, na.rm=TRUE), CurrentDeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
@@ -153,7 +153,7 @@ dfMichiganChange <- dfCountyData %>%
 if(params$debug==1) head(dfMichiganChange)
 
 dfPreviousDayReportData <- dfCountyData %>% 
-  filter(Date == as.character(Sys.Date()-3)) %>% 
+  filter(Date == as.character(Sys.Date()-2)) %>% 
   filter(State=='Michigan') %>% 
   group_by(County) %>% 
   summarize(PreviousCasesPerCounty=sum(Cases, na.rm=TRUE), PreviousDeathsPerCounty=sum(Deaths, na.rm=TRUE)) %>% 
